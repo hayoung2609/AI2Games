@@ -1,16 +1,16 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <algorithm>
+#include <cmath>
+#include <cstdlib>
 #include <chrono>
 
 using namespace std;
 using namespace std::chrono;
 
-/**
- * Auto-generated code below aims at helping you parse
- * the standard input according to the problem statement.
- **/
+const int W = 19;
+const int H = 10;
+
 struct Robot {
     int x = 0, y = 0;
     char dir;
@@ -22,73 +22,83 @@ struct Game {
     vector<Robot> robots;
 };
 
+// 방향 문자 -> 이동량, 번호
+int dirIndex(char d) {
+    if (d == 'U') return 0;
+    if (d == 'D') return 1;
+    if (d == 'L') return 2;
+    return 3; // 'R'
+}
+int DX[4] = {0, 0, -1, 1};   // U D L R
+int DY[4] = {-1, 1, 0, 0};
+char DIRS[4] = {'U', 'D', 'L', 'R'};
+
+bool isArrow(char c) {
+    return c == 'U' || c == 'D' || c == 'L' || c == 'R';
+}
+
+// ---------------------------------------------------------------
+// 시뮬레이션 (1a 코드 + 공식 규칙에 맞게 2가지 수정)
+//   1) 시작 칸에 화살표가 있으면 첫 턴 전에 방향을 바꾼다
+//   2) 시작 상태 (칸, 방향)도 visited에 기록한다
+// ---------------------------------------------------------------
 int simulate(Game game) {
     int score = 0;
     bool visited[10][10][19][4] = {false};
 
-    while(1) {
-        int count = 0;
-        for(int i = 0; i < game.robots.size(); i++) {
-            if(game.robots[i].isAlive) {
-                count++;
-            }
-        }
-        if (count == 0) break;
-
-        score += count;
-        for(int i = 0; i < game.robots.size(); i++) {
-            if(!game.robots[i].isAlive) continue;
-            char dir = game.robots[i].dir;
-            if(dir == 'U') {
-                game.robots[i].y = (game.robots[i].y - 1 + 10) % 10;
-            }
-            else if(dir == 'D') {
-                game.robots[i].y = (game.robots[i].y + 1 + 10) % 10;
-            }
-            else if(dir == 'L') {
-                game.robots[i].x = (game.robots[i].x - 1 + 19) % 19;
-            }
-            else if(dir == 'R') {
-                game.robots[i].x = (game.robots[i].x + 1 + 19) % 19;
-            }
-            int nx = game.robots[i].x;
-            int ny = game.robots[i].y;
-            char tile = game.grid[ny][nx];
-
-            if(tile == '#') {
-                game.robots[i].isAlive = 0;
-            }
-            else if(tile == 'U' || tile == 'D' || tile == 'L' || tile == 'R') {
-                game.robots[i].dir = tile;
-            }
-            
-            if(game.robots[i].isAlive) {
-                int dir_num = 0;
-                char n_dir = game.robots[i].dir;
-                if(n_dir == 'U') dir_num = 0;
-                else if(n_dir == 'D') dir_num = 1;
-                else if(n_dir == 'L') dir_num = 2;
-                else if(n_dir == 'R') dir_num = 3;
-
-                if(visited[i][ny][nx][dir_num] == 1) {
-                    game.robots[i].isAlive = 0;
-                } 
-                else {
-                    visited[i][ny][nx][dir_num] = 1;
-                }
-            }
-        }
+    for (int i = 0; i < game.robots.size(); i++) {
+        Robot &r = game.robots[i];
+        char tile = game.grid[r.y][r.x];
+        if (isArrow(tile)) r.dir = tile;                 // 수정 1
+        visited[i][r.y][r.x][dirIndex(r.dir)] = 1;       // 수정 2
     }
 
+    while (1) {
+        int count = 0;
+        for (int i = 0; i < game.robots.size(); i++) {
+            if (game.robots[i].isAlive) count++;
+        }
+        if (count == 0) break;
+        score += count;
+
+        for (int i = 0; i < game.robots.size(); i++) {
+            Robot &r = game.robots[i];
+            if (!r.isAlive) continue;
+
+            int d = dirIndex(r.dir);
+            r.x = (r.x + DX[d] + W) % W;
+            r.y = (r.y + DY[d] + H) % H;
+
+            char tile = game.grid[r.y][r.x];
+            if (tile == '#') {
+                r.isAlive = 0;
+                continue;
+            }
+            if (isArrow(tile)) r.dir = tile;
+
+            int nd = dirIndex(r.dir);
+            if (visited[i][r.y][r.x][nd]) r.isAlive = 0;
+            else visited[i][r.y][r.x][nd] = 1;
+        }
+    }
     return score;
+}
+
+// (x, y)에서 방향 d로 한 칸 간 곳이 플랫폼인가?
+bool isPlatform(Game &game, int x, int y, int d) {
+    int nx = (x + DX[d] + W) % W;
+    int ny = (y + DY[d] + H) % H;
+    return game.grid[ny][nx] != '#';
+}
+
+double randomDouble() {
+    return (double)rand() / RAND_MAX;
 }
 
 int main()
 {
     Game game;
-
     for (int i = 0; i < 10; i++) {
-        string line;
         getline(cin, game.grid[i]);
     }
     int robot_count;
@@ -96,59 +106,116 @@ int main()
     for (int i = 0; i < robot_count; i++) {
         Robot robot;
         cin >> robot.x >> robot.y >> robot.dir; cin.ignore();
-
         game.robots.push_back(robot);
     }
 
-    // Write an action using cout. DON'T FORGET THE "<< endl"
-    // To debug: cerr << "Debug messages..." << endl;
+    auto start_time = high_resolution_clock::now();
 
-    vector<pair<int, int>> empty_cells;
-    for (int y = 0; y < 10; y++) {
-        for (int x = 0; x < 19; x++) {
-            if (game.grid[y][x] == '.') {
-                empty_cells.push_back({x, y});
+    string original[10];                 // 처음 맵 (출력할 때 비교용)
+    for (int i = 0; i < 10; i++) original[i] = game.grid[i];
+
+    // -----------------------------------------------------------
+    // 탐색 공간 줄이기
+    //  - 막다른 칸: 출구 방향 화살표를 고정으로 놓는다 (되돌아오게)
+    //  - 직선 복도 칸: 화살표가 의미 없으므로 후보에서 뺀다
+    //  - 허공(#)을 가리키는 방향은 후보에서 뺀다
+    // -----------------------------------------------------------
+    vector<pair<int, int>> cells;        // SA가 바꿀 수 있는 칸
+    vector<vector<char>> options;        // 각 칸에서 가능한 값들 ('.' = 화살표 없음)
+
+    for (int y = 0; y < H; y++) {
+        for (int x = 0; x < W; x++) {
+            if (game.grid[y][x] != '.') continue;   // 빈 플랫폼에만 놓을 수 있음
+
+            vector<char> dirsOk;
+            for (int d = 0; d < 4; d++) {
+                if (isPlatform(game, x, y, d)) dirsOk.push_back(DIRS[d]);
+            }
+
+            if (dirsOk.size() == 0) continue;       // 사방이 허공: 의미 없음
+
+            bool robotStart = false;
+            for (int i = 0; i < game.robots.size(); i++) {
+                if (game.robots[i].x == x && game.robots[i].y == y) robotStart = true;
+            }
+
+            // 막다른 칸: 출구 방향 화살표를 고정으로 놓는다
+            // (단, 로봇 시작 칸이면 시작 상태로 돌아와 죽을 수 있으므로 SA에 맡긴다)
+            if (dirsOk.size() == 1 && !robotStart) {
+                game.grid[y][x] = dirsOk[0];
+                continue;
+            }
+
+            bool upDown = isPlatform(game, x, y, 0) && isPlatform(game, x, y, 1);
+            bool leftRight = isPlatform(game, x, y, 2) && isPlatform(game, x, y, 3);
+            if (dirsOk.size() == 2 && (upDown || leftRight)) continue;   // 직선 복도
+
+            vector<char> opt = dirsOk;
+            opt.push_back('.');
+            cells.push_back({x, y});
+            options.push_back(opt);
+        }
+    }
+
+    // -----------------------------------------------------------
+    // Simulated Annealing (강의 슬라이드의 시간 기반 버전)
+    // -----------------------------------------------------------
+    const double TEMP_START = 10.0;
+    const double TEMP_END = 0.5;
+    const double TIME_LIMIT = 900.0;   // ms
+
+    Game current = game;
+    int currentScore = simulate(current);
+    Game best = current;
+    int bestScore = currentScore;
+
+    while (!cells.empty()) {
+        double elapsed = duration_cast<microseconds>(high_resolution_clock::now() - start_time).count() / 1000.0;
+        if (elapsed > TIME_LIMIT) break;
+        double temp = TEMP_START * pow(TEMP_END / TEMP_START, elapsed / TIME_LIMIT);
+
+        for (int it = 0; it < 100; it++) {
+            // 1) 변이: 칸 하나를 골라 값을 바꾼다
+            int k = rand() % cells.size();
+            int x = cells[k].first;
+            int y = cells[k].second;
+            char oldValue = current.grid[y][x];
+            char newValue = options[k][rand() % options[k].size()];
+            if (newValue == oldValue) continue;
+
+            current.grid[y][x] = newValue;
+
+            // 2) 평가
+            int newScore = simulate(current);
+            int diff = newScore - currentScore;
+
+            // 3) 받아들일지 결정
+            if (diff >= 0 || randomDouble() < exp(diff / temp)) {
+                currentScore = newScore;
+                if (currentScore > bestScore) {
+                    bestScore = currentScore;
+                    best = current;
+                }
+            } else {
+                current.grid[y][x] = oldValue;   // 되돌리기
             }
         }
     }
-    char dirs[4] = {'U', 'D', 'L', 'R'};
-    int best_score = -1;
-    string best_action = "";
 
-    auto start_time = high_resolution_clock::now();
-
-    while (1) {
-        auto current_time = high_resolution_clock::now();
-        int elapsed = duration_cast<milliseconds>(current_time - start_time).count();
-        if (elapsed > 900) break;
-
-        Game test_game = game;
-        string answer = "";
-        
-        int num_arrows = rand() % 5 + 1; 
-        for (int i = 0; i < num_arrows; i++) {
-            if (empty_cells.empty()) break;
-            
-            int rand_idx = rand() % empty_cells.size();
-            int px = empty_cells[rand_idx].first;
-            int py = empty_cells[rand_idx].second;
-            char pdir = dirs[rand() % 4];
-
-            test_game.grid[py][px] = pdir;
-            answer += to_string(px) + " " + to_string(py) + " " + string(1, pdir) + " ";
-        }
-
-        int score = simulate(test_game);
-
-        if (score > best_score) {
-            best_score = score;
-            best_action = answer;
+    // -----------------------------------------------------------
+    // 출력: 원래 '.' 이었는데 화살표가 생긴 칸만 출력
+    // -----------------------------------------------------------
+    string answer = "";
+    for (int y = 0; y < H; y++) {
+        for (int x = 0; x < W; x++) {
+            if (original[y][x] == '.' && isArrow(best.grid[y][x])) {
+                answer += to_string(x) + " " + to_string(y) + " " + best.grid[y][x] + " ";
+            }
         }
     }
 
-    if (best_action == "") {
-        cout << "0 0 U" << endl;
-    } else {
-        cout << best_action << endl;
-    }
+    // 놓을 화살표가 없으면 빈 줄을 출력 (아무것도 안 놓음)
+    cout << answer << endl;
+
+    cerr << "best score = " << bestScore << endl;
 }
