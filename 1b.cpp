@@ -39,7 +39,7 @@ bool isArrow(char c) {
 
 int simulate(Game game) {
     int score = 0;
-    bool visited[10][10][19][4] = {false};
+    bool visited[10][10][19][4] = {false}; // robot idx, y, x, dir
 
     for (int i = 0; i < game.robots.size(); i++) {
         Robot &r = game.robots[i];
