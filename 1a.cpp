@@ -9,8 +9,8 @@ using namespace std::chrono;
 
 // encoding 
 struct Robot {
-    int x = 0, y = 0;
-    char dir;
+    int x = 0, y = 0;   // location
+    char dir;   // U D L R
     bool isAlive = 1;
 };
 
