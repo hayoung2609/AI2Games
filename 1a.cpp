@@ -25,6 +25,8 @@ int simulate(Game game) {
 
     while(1) {
         int count = 0;
+
+        // add aliving robot
         for(int i = 0; i < game.robots.size(); i++) {
             if(game.robots[i].isAlive) {
                 count++;
