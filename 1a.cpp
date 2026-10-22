@@ -7,10 +7,7 @@
 using namespace std;
 using namespace std::chrono;
 
-/**
- * Auto-generated code below aims at helping you parse
- * the standard input according to the problem statement.
- **/
+// encoding 
 struct Robot {
     int x = 0, y = 0;
     char dir;
