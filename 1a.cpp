@@ -19,24 +19,25 @@ struct Game {
     vector<Robot> robots;
 };
 
-int simulate(Game game) {
+int simulate(Game game) {      // &없이 받으면 게임 전체를 복사한 값
     int score = 0;
-    bool visited[10][10][19][4] = {false};
+    bool visited[10][10][19][4] = {false};      //  inde robot, x, y, dir
 
     while(1) {
         int count = 0;
 
-        // add aliving robot
+        // count aliving robot
         for(int i = 0; i < game.robots.size(); i++) {
             if(game.robots[i].isAlive) {
                 count++;
             }
         }
         if (count == 0) break;
-
         score += count;
+
+        // move one step, torus
         for(int i = 0; i < game.robots.size(); i++) {
-            if(!game.robots[i].isAlive) continue;
+            if(!game.robots[i].isAlive) continue;   // skip dead robot
             char dir = game.robots[i].dir;
             if(dir == 'U') {
                 game.robots[i].y = (game.robots[i].y - 1 + 10) % 10;
@@ -50,6 +51,8 @@ int simulate(Game game) {
             else if(dir == 'R') {
                 game.robots[i].x = (game.robots[i].x + 1 + 19) % 19;
             }
+
+            // new location
             int nx = game.robots[i].x;
             int ny = game.robots[i].y;
             char tile = game.grid[ny][nx];
@@ -69,6 +72,7 @@ int simulate(Game game) {
                 else if(n_dir == 'L') dir_num = 2;
                 else if(n_dir == 'R') dir_num = 3;
 
+                // before visited -> loop -> dead
                 if(visited[i][ny][nx][dir_num] == 1) {
                     game.robots[i].isAlive = 0;
                 } 
@@ -99,8 +103,6 @@ int main()
         game.robots.push_back(robot);
     }
 
-    // Write an action using cout. DON'T FORGET THE "<< endl"
-    // To debug: cerr << "Debug messages..." << endl;
 
     vector<pair<int, int>> empty_cells;
     for (int y = 0; y < 10; y++) {
@@ -119,20 +121,21 @@ int main()
     while (1) {
         auto current_time = high_resolution_clock::now();
         int elapsed = duration_cast<milliseconds>(current_time - start_time).count();
-        if (elapsed > 900) break;
+        if (elapsed > 900) break;   // stop over 0.9s
 
-        Game test_game = game;
+        Game test_game = game;      // 원본 게임 복사 후 새로 시작.
         string answer = "";
         
         int num_arrows = rand() % 5 + 1; 
         for (int i = 0; i < num_arrows; i++) {
-            if (empty_cells.empty()) break;
+            if (empty_cells.empty()) break;     // 빈칸X -> 중단
             
             int rand_idx = rand() % empty_cells.size();
             int px = empty_cells[rand_idx].first;
             int py = empty_cells[rand_idx].second;
             char pdir = dirs[rand() % 4];
 
+            // copy map into arrow
             test_game.grid[py][px] = pdir;
             answer += to_string(px) + " " + to_string(py) + " " + string(1, pdir) + " ";
         }
