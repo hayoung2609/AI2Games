@@ -2,6 +2,7 @@
 using namespace std;
 using Clock = chrono::steady_clock;
 
+
 static const int       MAXN      = 100;
 static const double    ASH_SPEED = 1000.0;
 static const double    ZOM_SPEED = 400.0;
