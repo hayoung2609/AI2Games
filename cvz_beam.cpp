@@ -10,6 +10,7 @@ static const double    ZOM_SPEED = 400.0;          // 좀비가 한 턴에 이�
 static const long long RANGE2    = 2000LL * 2000LL; // 사정거리(2000)의 제곱 — 거리 비교는 항상 제곱으로
 static long long fibSum[MAXN + 1];
 
+// 뒤쪽 피보나치 누적합을 미리 만들어서 저장.
 static void initFib() {
     long long a = 1, b = 2, sum = 0;
     fibSum[0] = 0;
@@ -30,7 +31,7 @@ struct State {
     int zn;                             // 생존한 좀비 수
     int zx[MAXN], zy[MAXN];             // 생존한 좀비들의 좌표 (항상 "이번 턴 phase 1 이후" 기준)
     long long score;                    // 게임 시작부터 지금까지 누적 점수
-    int status;                         // 0 = 진행 중, 1 = 승리, -1 = 패배(전멸)
+    int status;                         // 게임 상태, 0 = 진행 중, 1 = 승리, -1 = 패배(전멸)
 };
 
 // 두 점 사이 거리의 제곱 (sqrt를 쓰지 않아 빠르고 오차가 없다)
@@ -39,6 +40,7 @@ static inline long long d2(int x1, int y1, int x2, int y2) {
     return dx * dx + dy * dy;
 }
 
+// 한 턴에 도착할 수 있으면 목표 위치에 바로 가고, 못 가면 목표 방향으로 한 턴 이동 거리만큼만 
 static inline void moveTowards(int &x, int &y, int tx, int ty, double speed) {
     long long dist2 = d2(x, y, tx, ty);
     if ((double)dist2 <= speed * speed) {
@@ -50,8 +52,8 @@ static inline void moveTowards(int &x, int &y, int tx, int ty, double speed) {
     y = (int)floor(y + speed * (ty - y) / dist);
 }
 
-// [phase 1] 모든 좀비가 "가장 가까운 사람(Ash 포함)" 쪽으로 400만큼 이동한다.
-// 동률일 때는 먼저 비교한 쪽(=Ash, 그다음 id가 작은 사람)이 우선권을 갖는다.
+// [phase 1] 모든 좀비가 "가장 가까운 사람(Ash 포함)" 쪽으로 400만큼 이동
+// 거리가 같으면 먼저 본 id가 작은 사람이 bestDist
 static void moveZombies(State &s) {
     for (int i = 0; i < s.zn; i++) {
         int targetX = s.ax, targetY = s.ay;                 // 기본 타깃 = Ash
