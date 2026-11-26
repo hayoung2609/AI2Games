@@ -15,7 +15,7 @@ static const int    ROLLOUT_STEPS     = 60;
 static const bool   USE_LURE_MOVES    = true;    // 8방향 이동 후보 사용 여부
 
 // 점수 = 10 * (생존자 수)^2 * (1+2+3+5+8+... , 같은 턴에 잡은 수만큼)
-// 뒤쪽 피보나치 누적합을 미리 표로 만들어 둔다.
+// 뒤쪽 피보나치 누적합을 미리 만들어서 저장.
 static long long fibSum[MAXN + 1];
 
 static void initFib() {
@@ -24,13 +24,13 @@ static void initFib() {
     for (int k = 1; k <= MAXN; k++) {
         sum += a;
         fibSum[k] = sum;
-        if (b < (long long)1e15) { long long next = a + b; a = b; b = next; }
+        if (b < (long long)1e15) { long long next = a + b; a = b; b = next; }       // 오버플로우 막고 수열 생성 멈춤.
     }
 }
 
 // 빔 탐색은 상태를 수십만 번 복사하므로 vector 대신 고정 배열을 쓴다.
 struct State {
-    int ax, ay;
+    int ax, ay;     // Ash
     int hn; int hx[MAXN], hy[MAXN];
     int zn; int zx[MAXN], zy[MAXN];   // 좌표는 항상 phase 1 이후 기준
     long long score;
