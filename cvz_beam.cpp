@@ -52,7 +52,7 @@ static inline void moveTowards(int &x, int &y, int tx, int ty, double speed) {
     y = (int)floor(y + speed * (ty - y) / dist);
 }
 
-// [phase 1] 모든 좀비가 "가장 가까운 사람(Ash 포함)" 쪽으로 400만큼 이동
+// phase 1: 모든 좀비가 "가장 가까운 사람(Ash 포함)" 쪽으로 400만큼 이동
 // 거리가 같으면 먼저 본 id가 작은 사람이 bestDist
 static void moveZombies(State &s) {
     for (int i = 0; i < s.zn; i++) {
@@ -70,12 +70,12 @@ static void moveZombies(State &s) {
 }
 
 static void simulate(State &s, int tx, int ty) {
-    // --- phase 2: Ash 이동 ---
+    // phase 2: Ash 이동 
     moveTowards(s.ax, s.ay, tx, ty, ASH_SPEED);
 
-    // --- phase 3: 사정거리(2000) 안의 좀비를 모두 제거하고 점수를 더한다 ---
-    int killed = 0, w = 0;
-    int survivorsBefore = s.hn;                     // 사격 시점의 생존자 수 (점수 계산 기준)
+    // phase 3: 사정거리(2000) 안의 좀비를 모두 제거하고 점수를 더한다
+    int killed = 0, w = 0;                     // w는 살아남은 좀비 수 기록
+    int survivorsBefore = s.hn;                     // 사격 시점의 생존자 수
     for (int i = 0; i < s.zn; i++) {
         if (d2(s.ax, s.ay, s.zx[i], s.zy[i]) <= RANGE2) {
             killed++;
@@ -88,7 +88,7 @@ static void simulate(State &s, int tx, int ty) {
         s.score += 10LL * survivorsBefore * survivorsBefore * fibSum[killed];
     }
 
-    // --- phase 4: 좀비와 같은 좌표에 있는 사람은 잡아먹힌다 ---
+    // phase 4: 좀비와 같은 좌표에 있는 사람은 잡아먹힌다
     w = 0;
     for (int i = 0; i < s.hn; i++) {
         bool eaten = false;
